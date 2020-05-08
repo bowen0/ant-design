@@ -9,7 +9,6 @@ import RcTreeSelect, {
 import classNames from 'classnames';
 import omit from 'omit.js';
 import { ConfigConsumer, ConfigConsumerProps } from '../config-provider';
-import collapseMotion from '../_util/motion';
 import warning from '../_util/warning';
 import { AntTreeNodeProps } from '../tree';
 import getIcons from '../select/utils/iconUtil';
@@ -31,21 +30,24 @@ export interface TreeSelectProps<T>
     RcTreeSelectProps<T>,
     'showTreeIcon' | 'treeMotion' | 'inputIcon' | 'mode' | 'getInputElement' | 'backfill'
   > {
+  suffixIcon?: React.ReactNode;
   size?: SizeType;
+  bordered?: boolean;
 }
 
 class TreeSelect<T> extends React.Component<TreeSelectProps<T>, {}> {
   static TreeNode = TreeNode;
 
-  static SHOW_ALL = SHOW_ALL;
+  static SHOW_ALL: typeof SHOW_ALL = SHOW_ALL;
 
-  static SHOW_PARENT = SHOW_PARENT;
+  static SHOW_PARENT: typeof SHOW_PARENT = SHOW_PARENT;
 
-  static SHOW_CHILD = SHOW_CHILD;
+  static SHOW_CHILD: typeof SHOW_CHILD = SHOW_CHILD;
 
   static defaultProps = {
     transitionName: 'slide-up',
     choiceTransitionName: 'zoom',
+    bordered: true,
   };
 
   selectRef = React.createRef<RcTreeSelect>();
@@ -85,12 +87,14 @@ class TreeSelect<T> extends React.Component<TreeSelectProps<T>, {}> {
       treeCheckable,
       multiple,
       listHeight = 256,
-      listItemHeight = 32,
+      listItemHeight = 26,
       notFoundContent,
       switcherIcon,
       treeLine,
       getPopupContainer,
       dropdownClassName,
+      bordered,
+      treeIcon = false,
     } = this.props;
 
     const prefixCls = getPrefixCls('select', customizePrefixCls);
@@ -130,6 +134,7 @@ class TreeSelect<T> extends React.Component<TreeSelectProps<T>, {}> {
       'clearIcon',
       'switcherIcon',
       'size',
+      'bordered',
     ]);
 
     return (
@@ -142,6 +147,7 @@ class TreeSelect<T> extends React.Component<TreeSelectProps<T>, {}> {
               [`${prefixCls}-lg`]: mergedSize === 'large',
               [`${prefixCls}-sm`]: mergedSize === 'small',
               [`${prefixCls}-rtl`]: direction === 'rtl',
+              [`${prefixCls}-borderless`]: !bordered,
             },
             className,
           );
@@ -168,10 +174,10 @@ class TreeSelect<T> extends React.Component<TreeSelectProps<T>, {}> {
               switcherIcon={(nodeProps: AntTreeNodeProps) =>
                 renderSwitcherIcon(treePrefixCls, switcherIcon, treeLine, nodeProps)
               }
-              showTreeIcon={false}
+              showTreeIcon={treeIcon}
               notFoundContent={mergedNotFound}
               getPopupContainer={getPopupContainer || getContextPopupContainer}
-              treeMotion={collapseMotion}
+              treeMotion={null}
               dropdownClassName={mergedDropdownClassName}
             />
           );

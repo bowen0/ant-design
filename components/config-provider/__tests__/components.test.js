@@ -21,6 +21,7 @@ import DatePicker from '../../date-picker';
 import Divider from '../../divider';
 import Drawer from '../../drawer';
 import Dropdown from '../../dropdown';
+import Empty from '../../empty';
 import Form from '../../form';
 import { Row, Col } from '../../grid';
 import Input from '../../input';
@@ -76,6 +77,26 @@ describe('ConfigProvider', () => {
           expect(
             render(
               <ConfigProvider pageHeader={{ ghost: false }} prefixCls="config">
+                {renderComponent({})}
+              </ConfigProvider>,
+            ),
+          ).toMatchSnapshot();
+        });
+
+        it('configProvider componentSize large', () => {
+          expect(
+            render(
+              <ConfigProvider componentSize="large" prefixCls="config">
+                {renderComponent({})}
+              </ConfigProvider>,
+            ),
+          ).toMatchSnapshot();
+        });
+
+        it('configProvider componentSize middle', () => {
+          expect(
+            render(
+              <ConfigProvider componentSize="middle" prefixCls="config">
                 {renderComponent({})}
               </ConfigProvider>,
             ),
@@ -233,6 +254,9 @@ describe('ConfigProvider', () => {
       ));
     });
 
+    // Empty
+    testPair('Empty', props => <Empty {...props} />);
+
     // Divider
     testPair('Divider', props => <Divider {...props} />);
 
@@ -286,6 +310,7 @@ describe('ConfigProvider', () => {
           <Input {...props} />
           <Input.Search {...props} />
         </Input.Group>
+        <Input.Password {...props} />
         <Input.TextArea {...props} />
       </div>
     ));

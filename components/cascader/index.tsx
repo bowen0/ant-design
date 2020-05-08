@@ -3,14 +3,13 @@ import RcCascader from 'rc-cascader';
 import arrayTreeFilter from 'array-tree-filter';
 import classNames from 'classnames';
 import omit from 'omit.js';
+import isEqual from 'lodash/isEqual';
 import KeyCode from 'rc-util/lib/KeyCode';
-import {
-  CloseCircleFilled,
-  DownOutlined,
-  RightOutlined,
-  RedoOutlined,
-  LeftOutlined,
-} from '@ant-design/icons';
+import CloseCircleFilled from '@ant-design/icons/CloseCircleFilled';
+import DownOutlined from '@ant-design/icons/DownOutlined';
+import RightOutlined from '@ant-design/icons/RightOutlined';
+import RedoOutlined from '@ant-design/icons/RedoOutlined';
+import LeftOutlined from '@ant-design/icons/LeftOutlined';
 
 import Input from '../input';
 import { ConfigConsumer, ConfigConsumerProps, RenderEmptyHandler } from '../config-provider';
@@ -83,6 +82,8 @@ export interface CascaderProps {
   placeholder?: string;
   /** 输入框大小，可选 `large` `default` `small` */
   size?: SizeType;
+  /** whether has border style */
+  bordered?: boolean;
   /** 禁用 */
   disabled?: boolean;
   /** 是否支持清除 */
@@ -221,6 +222,7 @@ class Cascader extends React.Component<CascaderProps, CascaderState> {
     options: [],
     disabled: false,
     allowClear: true,
+    bordered: true,
   };
 
   static getDerivedStateFromProps(nextProps: CascaderProps, { prevProps }: CascaderState) {
@@ -456,6 +458,7 @@ class Cascader extends React.Component<CascaderProps, CascaderState> {
           suffixIcon,
           notFoundContent,
           popupClassName,
+          bordered,
           ...otherProps
         } = props;
         const mergedSize = customizeSize || size;
@@ -489,6 +492,7 @@ class Cascader extends React.Component<CascaderProps, CascaderState> {
           [`${prefixCls}-picker-${mergedSize}`]: !!mergedSize,
           [`${prefixCls}-picker-show-search`]: !!showSearch,
           [`${prefixCls}-picker-focused`]: inputFocused,
+          [`${prefixCls}-picker-borderless`]: !bordered,
         });
 
         // Fix bug of https://github.com/facebook/react/pull/5004
@@ -511,13 +515,15 @@ class Cascader extends React.Component<CascaderProps, CascaderState> {
           'sortFilteredOption',
           'notFoundContent',
           'fieldNames',
+          'bordered',
         ]);
 
         let { options } = props;
         const names: FilledFieldNamesType = getFilledFieldNames(this.props);
         if (options && options.length > 0) {
           if (state.inputValue) {
-            options = this.generateFilteredOptions(prefixCls, renderEmpty);
+             const filteredOptions = this.generateFilteredOptions(prefixCls, renderEmpty);
+             options = isEqual(filteredOptions, this.cachedOptions) ? this.cachedOptions : filteredOptions;
           }
         } else {
           options = [
@@ -594,7 +600,7 @@ class Cascader extends React.Component<CascaderProps, CascaderState> {
         );
 
         const getPopupContainer = props.getPopupContainer || getContextPopupContainer;
-        const rest = omit(props, ['inputIcon', 'expandIcon', 'loadingIcon']);
+        const rest = omit(props, ['inputIcon', 'expandIcon', 'loadingIcon', 'bordered']);
         const rcCascaderRtlPopupClassName = classNames(popupClassName, {
           [`${prefixCls}-menu-${direction}`]: direction === 'rtl',
         });

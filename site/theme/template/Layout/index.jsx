@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
-import { enquireScreen } from 'enquire-js';
+import classNames from 'classnames';
 import { IntlProvider } from 'react-intl';
 import { presetPalettes, presetDarkPalettes } from '@ant-design/colors';
 import themeSwitcher from 'theme-switcher';
@@ -14,6 +14,7 @@ import setupLogRocketReact from 'logrocket-react';
 // eslint-disable-next-line import/no-unresolved
 import zhCN from 'antd/es/locale/zh_CN';
 import Header from './Header';
+import SiteContext from './SiteContext';
 import enLocale from '../../en-US';
 import cnLocale from '../../zh-CN';
 import * as utils from '../utils';
@@ -25,6 +26,11 @@ if (typeof window !== 'undefined' && navigator.serviceWorker) {
 }
 
 if (typeof window !== 'undefined') {
+  // Redirect to `ant.design` if is not next version anymore
+  if (location.hostname === 'next.ant.design') {
+    location.href = location.href.replace('next.ant.design', 'ant.design');
+  }
+
   // eslint-disable-next-line global-require
   require('../../static/style');
 
@@ -51,16 +57,14 @@ if (typeof window !== 'undefined') {
   }
 }
 
-let isMobile = false;
-enquireScreen(b => {
-  isMobile = b;
-});
+const RESPONSIVE_MOBILE = 768;
 const SITE_THEME_STORE_KEY = 'site-theme';
 
 // for dark.css timestamp to remove cache
 const timestamp = new Date().getTime();
 const themeMap = {
   dark: `/dark.css?${timestamp}`,
+  compact: `/compact.css?${timestamp}`,
 };
 const themeConfig = {
   themeMap,
@@ -73,8 +77,7 @@ export default class Layout extends React.Component {
   };
 
   static childContextTypes = {
-    isMobile: PropTypes.bool,
-    theme: PropTypes.oneOf(['default', 'dark']),
+    theme: PropTypes.oneOf(['default', 'dark', 'compact']),
     setTheme: PropTypes.func,
     direction: PropTypes.string,
     setIframeTheme: PropTypes.func,
@@ -87,7 +90,6 @@ export default class Layout extends React.Component {
 
     this.state = {
       appLocale,
-      isMobile,
       theme:
         typeof localStorage !== 'undefined'
           ? localStorage.getItem(SITE_THEME_STORE_KEY) || 'default'
@@ -101,8 +103,8 @@ export default class Layout extends React.Component {
   }
 
   getChildContext() {
-    const { isMobile: mobile, theme, setTheme, direction, setIframeTheme } = this.state;
-    return { isMobile: mobile, theme, setTheme, direction, setIframeTheme };
+    const { theme, setTheme, direction, setIframeTheme } = this.state;
+    return { theme, setTheme, direction, setIframeTheme };
   }
 
   componentDidMount() {
@@ -134,16 +136,24 @@ export default class Layout extends React.Component {
       }, 0);
     }
 
-    enquireScreen(b => {
-      this.setState({
-        isMobile: !!b,
-      });
-    });
+    this.updateMobileMode();
+    window.addEventListener('resize', this.updateMobileMode);
   }
 
   componentWillUnmount() {
     clearTimeout(this.timer);
+    window.removeEventListener('resize', this.updateMobileMode);
   }
+
+  updateMobileMode = () => {
+    const { isMobile } = this.state;
+    const newIsMobile = window.innerWidth < RESPONSIVE_MOBILE;
+    if (isMobile !== newIsMobile) {
+      this.setState({
+        isMobile: newIsMobile,
+      });
+    }
+  };
 
   setIframeTheme = (iframeNode, theme) => {
     iframeNode.contentWindow.postMessage(
@@ -192,46 +202,55 @@ export default class Layout extends React.Component {
 
   render() {
     const { children, helmetContext = {}, ...restProps } = this.props;
-    const { appLocale, direction } = this.state;
+    const { appLocale, direction, isMobile } = this.state;
     const title =
       appLocale.locale === 'zh-CN'
         ? 'Ant Design - 一套企业级 UI 设计语言和 React 组件库'
-        : 'Ant Design - A UI Design Language and React UI library';
+        : "Ant Design - The world's second most popular React UI framework";
     const description =
       appLocale.locale === 'zh-CN'
         ? '基于 Ant Design 设计体系的 React UI 组件库，用于研发企业级中后台产品。'
         : 'An enterprise-class UI design language and React UI library with a set of high-quality React components, one of best React UI library for enterprises';
-    let pageWrapperClass = 'page-wrapper';
-    if (direction === 'rtl') {
-      pageWrapperClass += ' page-wrapper-rtl';
-    }
     return (
-      <HelmetProvider context={helmetContext}>
-        <Helmet encodeSpecialCharacters={false}>
-          <html lang={appLocale.locale === 'zh-CN' ? 'zh' : 'en'} data-direction={direction} />
-          <title>{title}</title>
-          <link
-            rel="apple-touch-icon-precomposed"
-            sizes="144x144"
-            href="https://gw.alipayobjects.com/zos/antfincdn/UmVnt3t4T0/antd.png"
-          />
-          <meta name="description" content={description} />
-          <meta property="og:title" content={title} />
-          <meta property="og:type" content="website" />
-          <meta
-            property="og:image"
-            content="https://gw.alipayobjects.com/zos/rmsportal/rlpTLlbMzTNYuZGGCVYM.png"
-          />
-        </Helmet>
-        <IntlProvider locale={appLocale.locale} messages={appLocale.messages} defaultLocale="en-US">
-          <ConfigProvider locale={appLocale.locale === 'zh-CN' ? zhCN : null} direction={direction}>
-            <div className={pageWrapperClass}>
+      <SiteContext.Provider value={{ isMobile, direction }}>
+        <HelmetProvider context={helmetContext}>
+          <Helmet encodeSpecialCharacters={false}>
+            <html
+              lang={appLocale.locale === 'zh-CN' ? 'zh' : 'en'}
+              data-direction={direction}
+              className={classNames({
+                [`rtl`]: direction === 'rtl',
+              })}
+            />
+            <title>{title}</title>
+            <link
+              rel="apple-touch-icon-precomposed"
+              sizes="144x144"
+              href="https://gw.alipayobjects.com/zos/antfincdn/UmVnt3t4T0/antd.png"
+            />
+            <meta name="description" content={description} />
+            <meta property="og:title" content={title} />
+            <meta property="og:type" content="website" />
+            <meta
+              property="og:image"
+              content="https://gw.alipayobjects.com/zos/rmsportal/rlpTLlbMzTNYuZGGCVYM.png"
+            />
+          </Helmet>
+          <IntlProvider
+            locale={appLocale.locale}
+            messages={appLocale.messages}
+            defaultLocale="en-US"
+          >
+            <ConfigProvider
+              locale={appLocale.locale === 'zh-CN' ? zhCN : null}
+              direction={direction}
+            >
               <Header {...restProps} changeDirection={this.changeDirection} />
               {children}
-            </div>
-          </ConfigProvider>
-        </IntlProvider>
-      </HelmetProvider>
+            </ConfigProvider>
+          </IntlProvider>
+        </HelmetProvider>
+      </SiteContext.Provider>
     );
   }
 }

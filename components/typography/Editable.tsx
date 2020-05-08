@@ -1,7 +1,7 @@
 import * as React from 'react';
 import classNames from 'classnames';
 import KeyCode from 'rc-util/lib/KeyCode';
-import { EnterOutlined } from '@ant-design/icons';
+import EnterOutlined from '@ant-design/icons/EnterOutlined';
 import TextArea from '../input/TextArea';
 
 interface EditableProps {
@@ -46,13 +46,16 @@ class Editable extends React.Component<EditableProps, EditableState> {
   };
 
   componentDidMount() {
-    if (this.textarea) {
-      this.textarea.focus();
+    if (this.textarea && this.textarea.resizableTextArea) {
+      const { textArea } = this.textarea.resizableTextArea;
+      textArea.focus();
+      const { length } = textArea.value;
+      textArea.setSelectionRange(length, length);
     }
   }
 
   onChange: React.ChangeEventHandler<HTMLTextAreaElement> = ({ target: { value } }) => {
-    this.setState({ current: value.replace(/[\r\n]/g, '') });
+    this.setState({ current: value.replace(/[\n\r]/g, '') });
   };
 
   onCompositionStart = () => {
